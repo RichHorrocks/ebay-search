@@ -11,8 +11,8 @@ from ebaysdk.exception import ConnectionError
 from flask import Flask
 from flask import render_template
 
-FILE_SEARCH = "/home/richard/projects/ebay/search.txt"
-FILE_HTML = "/home/richard/projects/ebay/templates/list.html"
+FILE_SEARCH = "search.txt"
+FILE_HTML = "templates/list.html"
 
 HTML_LINK = '<a href="%s" target="_blank">%s</a> %s %s</br>'
 HTML_HEADER = '</br><b>Search string: %s</b></br>'
