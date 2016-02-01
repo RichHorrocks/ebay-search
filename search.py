@@ -60,7 +60,7 @@ def ebay_find_wanted_items():
         item_price = item.split(' ', 1)[0]
         item_name = item.split(' ', 1)[1]
 
-        api.execute('findItemsAdvanced', {
+        response = api.execute('findItemsAdvanced', {
             'keywords': item_name,
             'itemFilter': [ 
                 {'name': 'ListingType',                 
@@ -74,22 +74,29 @@ def ebay_find_wanted_items():
         })
 
         # The results are returned as a dictionary.
-        mydict = api.response_dict()
-        mydict_count = int(mydict["searchResult"]["count"]["value"])        
+#        mydict = api.response.dict()
+#        print(mydict)
+#        print(mydict["searchResult"]["_count"])
+#        mydict_count = int(mydict["searchResult"]["_count"])  
+        item_count = int(response.reply.searchResult._count)
+        print(item_name)
+        print(response.reply.searchResult._count)
+       
 
-        if mydict_count != 0:
+
+        if item_count != 0:
             items_html_list.append(HTML_HEADER % item_name)
 
-        for i in range(mydict_count):
-            if mydict_count == 1:
-                item_dict = mydict["searchResult"]["item"]
+        for i in range(item_count):
+            if item_count == 1:
+                item = response.reply.searchResult.item[0]
             else:
-                item_dict = mydict["searchResult"]["item"][i]
+                item = response.reply.searchResult.item[i]
 
-            items_html_list.append(HTML_LINK % (item_dict["viewItemURL"]["value"],
-                                                item_dict["title"]["value"],
-                                                item_dict["sellingStatus"]["bidCount"]["value"],
-                                                item_dict["sellingStatus"]["currentPrice"]["value"]))            
+            items_html_list.append(HTML_LINK % (item.viewItemURL,
+                                                item.title,
+                                                item.sellingStatus.bidCount,
+                                                item.sellingStatus.currentPrice))
 
     ebay_write_html(items_html_list)
 

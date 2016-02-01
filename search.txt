@@ -1,3 +1,4 @@
+100 shirt
 10 loft insulation 200
 10.00 slim fit shirt 15.5 reed
 6.00 slim fit shirt 15.5 lewin 100
@@ -29,7 +30,7 @@
 15 "black diamond" climbing shorts
 200 thinkpad no operating system
 5 right croc
-7 slim fit m&s shirt 15.5
+7 slim fit m s shirt 15.5
 10 all saints trousers 32
 3 little white lies magazine
 100 frietag wallet
