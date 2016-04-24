@@ -16,7 +16,10 @@ from flask import render_template
 FILE_SEARCH = "./search.txt"
 FILE_HTML = "./templates/list.html"
 
-HTML_LINK= """<td align="right" style="width:60px">%s%s</td>
+LINK_FLAG = '<tr><b><font color="red">LOOK AT ME!</font></b>'
+LINK_BUTTONS = """<tr><td><button type="button">Remove!</button></td>
+                      <td><button type="button">Flag!</button></td>"""
+LINK_HTML= """<td align="right" style="width:60px">%s%s</td>
               <td align="right" style="width:120px">%s</td>
               <td align="right" style="width:15px">%s</td>
               <td><a href="%s" target="_blank">%s</a></td></tr>"""
@@ -36,13 +39,15 @@ app = Flask(__name__)
 def ebay_serve_page():
     return render_template("list.html")
 
+
 # Check whether we're parsing a comment.
 def ebay_is_comment(line):
     return line[:1] == '#'
+       
 
 # Write our constructed HTML strings.
 def ebay_write_html(items_to_write):
-    with open(FILE_HTML, 'a+') as f:
+    with open(FILE_HTML, 'w') as f:
         for item in items_to_write:
             f.write("%s" % item)
 
@@ -69,10 +74,13 @@ def ebay_find_wanted_items():
 
     # Query eBay for each wanted item.
     for item in wanted_items:
+        if ebay_is_comment(item):
+            continue
+
         item_price = item.split(' ', 1)[0]
         item_name = item.split(' ', 1)[1]
 
-        response = api.execute('findItemsAdvanced', {
+        api.execute('findItemsAdvanced', {
             'keywords': item_name,
             'itemFilter': [ 
                 {'name': 'ListingType',                 
@@ -86,42 +94,48 @@ def ebay_find_wanted_items():
         })
 
         # The results are returned as a dictionary.
-#        mydict = api.response.dict()
-#        print(mydict)
-#        print(mydict["searchResult"]["_count"])
-#        mydict_count = int(mydict["searchResult"]["_count"])  
-        item_count = int(response.reply.searchResult._count)
-        print(item_name)
-        print(response.reply.searchResult._count)
-       
+        mydict = api.response_dict()
+        mydict_count = int(mydict["searchResult"]["count"]["value"])        
 
+        items_html_list.append(HTML_HEADER % (item_name, item_price))
+        items_html_list.append(TABLE_OPEN)
 
-        if item_count != 0:
-            items_html_list.append(HTML_HEADER % (item_name, item_price))
-            items_html_list.append(TABLE_OPEN)
-
-        for i in range(item_count):
-            if item_count == 1:
-                item = response.reply.searchResult.item[0]
+        for i in range(mydict_count):
+            if mydict_count == 1:
+                item_dict = mydict["searchResult"]["item"]
             else:
-                item = response.reply.searchResult.item[i]
-        
-            total_price = float(item.sellingStatus.currentPrice.value)
-#float(item.shippingInfo.shippingServiceCost.value)
+                item_dict = mydict["searchResult"]["item"][i]
+         
+            total_price = float(item_dict["sellingStatus"]
+                                         ["currentPrice"]
+                                         ["value"])
 
-            free_postage = False
- #           if item.shippingInfo.shippingServiceCost.value is "0.0":
- #               free_postage = True
+            # Some items will have free postage, so the below field won't be 
+            # populated.
+            free_postage = True
+            if "shippingServiceCost" in item_dict["shippingInfo"]:
+                free_postage = False
+                total_price += float(item_dict["shippingInfo"]
+                                              ["shippingServiceCost"]
+                                              ["value"])
 
             if total_price < float(item_price):
-                date = isodate.parse_duration(item.sellingStatus.timeLeft)
+                # Get the date in a human-readable form.
+                date = isodate.parse_duration(item_dict["sellingStatus"]
+                                                       ["timeLeft"]
+                                                       ["value"]);
 
-                items_html_list.append(HTML_LINK % (locale.currency(total_price),
-                                                    "f" if free_postage else "",
-                                                    date,
-                                                    item.sellingStatus.bidCount,
-                                                    item.viewItemURL,
-                                                    item.title.encode('utf-8')))
+                html_link = LINK_BUTTONS + LINK_HTML
+                items_html_list.append(html_link % 
+                                       (locale.currency(total_price),
+                                        "f" if free_postage else "",
+                                        date,
+                                        item_dict["sellingStatus"]
+                                                 ["bidCount"]["value"],
+                                        item_dict["viewItemURL"]
+                                                 ["value"],
+                                        item_dict["title"]
+                                                 ["value"].encode('utf-8')))
 
         items_html_list.append(TABLE_CLOSE)
 
