@@ -5,6 +5,7 @@ import sys
 import pprint
 import locale
 
+import time
 import isodate
 import ebaysdk
 from ebaysdk.finding import Connection as finding
@@ -16,12 +17,12 @@ from flask import render_template
 FILE_SEARCH = "./search.txt"
 FILE_HTML = "./templates/list.html"
 
-HTML_LINK= """<td align="right" style="width:60px">%s%s</td>
-              <td align="right" style="width:120px">%s</td>
-              <td align="right" style="width:15px">%s</td>
-              <td><a href="%s" target="_blank">%s</a></td></tr>"""
-
+HTML_LINK = """<td align="right" style="width:60px">%s%s</td>
+               <td align="right" style="width:120px">%s</td>
+               <td align="right" style="width:15px">%s</td>
+               <td><a href="%s" target="_blank">%s</a></td></tr>"""
 HTML_HEADER = '</br>Search string: <b>"%s"</b> ------ Price: %s</br>'
+HTML_TIME = '<p><small>Results generated in %.3f seconds.</small></p>'
 
 # The attributes of the table.
 TABLE_OPEN = '<table>'
@@ -66,6 +67,9 @@ def ebay_find_wanted_items():
 
     # List to hold the lines of html we're going to write to a file.
     items_html_list = []
+
+    # Get the current time, for use in calculating elapsed time.
+    time_start = time.time()
 
     # Query eBay for each wanted item.
     for item in wanted_items:
@@ -125,6 +129,7 @@ def ebay_find_wanted_items():
 
         items_html_list.append(TABLE_CLOSE)
 
+    items_html_list.append(HTML_TIME % time.time() - time_start)
     ebay_write_html(items_html_list)
 
 
