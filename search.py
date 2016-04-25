@@ -42,7 +42,7 @@ def ebay_is_comment(line):
 
 # Write our constructed HTML strings.
 def ebay_write_html(items_to_write):
-    with open(FILE_HTML, 'a+') as f:
+    with open(FILE_HTML, 'w') as f:
         for item in items_to_write:
             f.write("%s" % item)
 
@@ -134,4 +134,4 @@ if __name__ == '__main__':
     ebay_find_wanted_items()
 
     app.debug = True
-    app.run(port = 5001, use_reloader=False)
+    app.run("0.0.0.0")
