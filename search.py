@@ -4,8 +4,8 @@ import os
 import sys
 import pprint
 import locale
-
 import time
+import datetime
 import isodate
 import ebaysdk
 from ebaysdk.finding import Connection as finding
@@ -22,7 +22,8 @@ HTML_LINK = """<td align="right" style="width:60px">%s%s</td>
                <td align="right" style="width:15px">%s</td>
                <td><a href="%s" target="_blank">%s</a></td></tr>"""
 HTML_HEADER = '</br>Search string: <b>"%s"</b> ------ Price: %s</br>'
-HTML_TIME = '<p><small>Results generated in %.3f seconds.</small></p>'
+HTML_TIME = """<p><small>Results generated in %.3f seconds. \
+               Last generated at %s</small></p>"""
 
 # The attributes of the table.
 TABLE_OPEN = '<table>'
@@ -90,15 +91,7 @@ def ebay_find_wanted_items():
         })
 
         # The results are returned as a dictionary.
-#        mydict = api.response.dict()
-#        print(mydict)
-#        print(mydict["searchResult"]["_count"])
-#        mydict_count = int(mydict["searchResult"]["_count"])  
         item_count = int(response.reply.searchResult._count)
-        print(item_name)
-        print(response.reply.searchResult._count)
-       
-
 
         if item_count != 0:
             items_html_list.append(HTML_HEADER % (item_name, item_price))
@@ -129,13 +122,14 @@ def ebay_find_wanted_items():
 
         items_html_list.append(TABLE_CLOSE)
 
-    items_html_list.append(HTML_TIME % time.time() - time_start)
+    dt = datetime.datetime.now().strftime("%A, %d. %B %Y %H:%M")
+    items_html_list.append(HTML_TIME % (time.time() - time_start, dt))
     ebay_write_html(items_html_list)
 
 
 # Run!
 if __name__ == '__main__':
-    locale.setlocale(locale.LC_ALL, '')
+    locale.setlocale(locale.LC_ALL, 'en_GB.utf8')
     ebay_find_wanted_items()
 
     app.debug = True
