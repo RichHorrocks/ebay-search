@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import pprint
 
 import os
 import sys
@@ -74,6 +75,9 @@ def ebay_find_wanted_items():
 
     # Query eBay for each wanted item.
     for item in wanted_items:
+        if ebay_is_comment(item):
+            continue
+
         item_price = item.split(' ', 1)[0]
         item_name = item.split(' ', 1)[1]
 
@@ -92,26 +96,30 @@ def ebay_find_wanted_items():
 
         # The results are returned as a dictionary.
         item_count = int(response.reply.searchResult._count)
-
-        if item_count != 0:
-            items_html_list.append(HTML_HEADER % (item_name, item_price))
-            items_html_list.append(TABLE_OPEN)
+        items_html_list.append(HTML_HEADER % (item_name, item_price))
+        items_html_list.append(TABLE_OPEN)
 
         for i in range(item_count):
             if item_count == 1:
                 item = response.reply.searchResult.item[0]
+#                item = response.dict()['searchResult']['item'][0]
+                print(item.title.encode('utf-8'))
             else:
                 item = response.reply.searchResult.item[i]
+                print(item.title.encode('utf-8'))
+#                item = response.dict()['searchResult']['_count'][i]
         
             total_price = float(item.sellingStatus.currentPrice.value)
-#float(item.shippingInfo.shippingServiceCost.value)
-
-            free_postage = False
- #           if item.shippingInfo.shippingServiceCost.value is "0.0":
- #               free_postage = True
+      
+            free_postage = True
+            if hasattr(item.shippingInfo, 'shippingServiceCost'):
+#            if 'shippingServiceCost' in item['shippingInfo']:
+                total_price += float(item.shippingInfo.shippingServiceCost.value)
+                free_postage = False
 
             if total_price < float(item_price):
                 date = isodate.parse_duration(item.sellingStatus.timeLeft)
+                print(date)
 
                 items_html_list.append(HTML_LINK % (locale.currency(total_price),
                                                     "f" if free_postage else "",
@@ -133,4 +141,4 @@ if __name__ == '__main__':
     ebay_find_wanted_items()
 
     app.debug = True
-    app.run("0.0.0.0")
+    app.run("0.0.0.0", use_reloader=False)
