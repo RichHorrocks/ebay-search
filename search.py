@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import pprint
 
 import os
 import sys
@@ -23,7 +22,7 @@ HTML_LINK = """<td align="right" style="width:60px">%s%s</td>
                <td align="right" style="width:15px">%s</td>
                <td><a href="%s" target="_blank">%s</a></td></tr>"""
 HTML_HEADER = '</br>Search string: <b>"%s"</b> ------ Price: %s</br>'
-HTML_TIME = """<p><small>Results generated in %.3f seconds. \
+HTML_TIME = """<p><small>Results generated for %d searches in %.3f seconds. \
                Last generated at %s</small></p>"""
 
 # The attributes of the table.
@@ -66,6 +65,7 @@ def ebay_find_wanted_items():
     # The amount we're willing to pay is: item.split(' ', 1)[0]
     # The string to search for is: item.split(' ', 1)[1]
     wanted_items = ebay_get_wanted_items()
+    wanted_item_count = 0
 
     # List to hold the lines of html we're going to write to a file.
     items_html_list = []
@@ -75,16 +75,16 @@ def ebay_find_wanted_items():
 
     # Query eBay for each wanted item.
     for item in wanted_items:
-        if ebay_is_comment(item):
+        if ebay_is_comment(item) or item.isspace():
             continue
-
         item_price = item.split(' ', 1)[0]
         item_name = item.split(' ', 1)[1]
-
+        wanted_item_count += 1
+ 
         response = api.execute('findItemsAdvanced', {
             'keywords': item_name,
-            'itemFilter': [ 
-                {'name': 'ListingType',                 
+            'itemFilter': [
+                {'name': 'ListingType',
                  'value': 'Auction'},
                 {'name': 'LocatedIn',
                  'value': 'GB'},
@@ -102,24 +102,18 @@ def ebay_find_wanted_items():
         for i in range(item_count):
             if item_count == 1:
                 item = response.reply.searchResult.item[0]
-#                item = response.dict()['searchResult']['item'][0]
-                print(item.title.encode('utf-8'))
             else:
                 item = response.reply.searchResult.item[i]
-                print(item.title.encode('utf-8'))
-#                item = response.dict()['searchResult']['_count'][i]
-        
+
             total_price = float(item.sellingStatus.currentPrice.value)
-      
+
             free_postage = True
             if hasattr(item.shippingInfo, 'shippingServiceCost'):
-#            if 'shippingServiceCost' in item['shippingInfo']:
                 total_price += float(item.shippingInfo.shippingServiceCost.value)
                 free_postage = False
 
             if total_price < float(item_price):
                 date = isodate.parse_duration(item.sellingStatus.timeLeft)
-                print(date)
 
                 items_html_list.append(HTML_LINK % (locale.currency(total_price),
                                                     "f" if free_postage else "",
@@ -131,9 +125,10 @@ def ebay_find_wanted_items():
         items_html_list.append(TABLE_CLOSE)
 
     dt = datetime.datetime.now().strftime("%A, %d. %B %Y %H:%M")
-    items_html_list.append(HTML_TIME % (time.time() - time_start, dt))
+    items_html_list.append(HTML_TIME % (wanted_item_count, 
+                                        time.time() - time_start, 
+                                        dt))
     ebay_write_html(items_html_list)
-
 
 # Run!
 if __name__ == '__main__':
