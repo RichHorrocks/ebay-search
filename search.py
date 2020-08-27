@@ -39,10 +39,14 @@ def ebay_serve_page():
     return render_template("list.html")
 
 # Check whether we're parsing a comment.
+
+
 def ebay_is_comment(line):
     return line[:1] == '#'
 
 # Write our constructed HTML strings.
+
+
 def ebay_write_html(items_to_write):
     with open(FILE_HTML, 'w') as f:
         for item in items_to_write:
@@ -59,7 +63,7 @@ def ebay_get_wanted_items():
 
 def ebay_find_wanted_items():
     # No need to include our ID here; that gets grabbed from the YAML file.
-    api = finding(siteid = 'EBAY-GB')
+    api = finding(https=True, siteid='EBAY-GB')
 
     # Get the search strings from our text file.
     # The amount we're willing to pay is: item.split(' ', 1)[0]
@@ -80,7 +84,7 @@ def ebay_find_wanted_items():
         item_price = item.split(' ', 1)[0]
         item_name = item.split(' ', 1)[1]
         wanted_item_count += 1
- 
+
         response = api.execute('findItemsAdvanced', {
             'keywords': item_name,
             'itemFilter': [
@@ -89,9 +93,9 @@ def ebay_find_wanted_items():
                 {'name': 'LocatedIn',
                  'value': 'GB'},
                 {'name': 'MaxPrice',
-                 'value': item_price },
-             ],
-             'sortOrder': 'EndTimeSoonest',
+                 'value': item_price},
+            ],
+            'sortOrder': 'EndTimeSoonest',
         })
 
         # The results are returned as a dictionary.
@@ -125,10 +129,11 @@ def ebay_find_wanted_items():
         items_html_list.append(TABLE_CLOSE)
 
     dt = datetime.datetime.now().strftime("%A, %d. %B %Y %H:%M")
-    items_html_list.append(HTML_TIME % (wanted_item_count, 
-                                        time.time() - time_start, 
+    items_html_list.append(HTML_TIME % (wanted_item_count,
+                                        time.time() - time_start,
                                         dt))
     ebay_write_html(items_html_list)
+
 
 # Run!
 if __name__ == '__main__':
@@ -136,4 +141,4 @@ if __name__ == '__main__':
     ebay_find_wanted_items()
 
     app.debug = True
-    app.run("0.0.0.0", use_reloader=False)
+    app.run("0.0.0.0", port=8887, use_reloader=False)
